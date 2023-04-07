@@ -93,20 +93,6 @@ func printTransactionInfo(tx *types.Transaction, from common.Address, nextNonce 
 	}
 }
 
-func calculateTotalCost(tx *types.Transaction) *big.Int {
-	var fee *big.Int
-	if tx.Type() == types.DynamicFeeTxType {
-		fmt.Println("🌱Max Priority Fee Per Gas: ", tx.GasTipCap().String())
-		fmt.Println("🌱Max Fee Per Gas: ", tx.GasFeeCap().String())
-		fee = new(big.Int).Mul(tx.GasFeeCap(), big.NewInt(int64(tx.Gas())))
-	} else {
-		fmt.Println("🌱Gas Price: ", tx.GasPrice().String())
-		fee = new(big.Int).Mul(tx.GasPrice(), big.NewInt(int64(tx.Gas())))
-	}
-	fmt.Println("🌱gasLimit: ", tx.Gas())
-	return fee
-}
-
 func checkNonceAndBalance(tx *types.Transaction, fee *big.Int, balance *big.Int) {
 	totalCost := new(big.Int).Add(fee, tx.Value())
 
@@ -129,24 +115,6 @@ func printContractInfo(data []byte) {
 	fmt.Println("· contractType: ", contractType)
 	fmt.Println("· methodSig: ", methodSig)
 	fmt.Println("· args: ", args)
-
-	// contractAbis := []*abi.ABI{token.Erc20, token.Erc721, token.Erc1155}
-	// contractNames := []string{"erc20", "erc721", "erc1155"}
-
-	// var decodedData *token.DecodedCallData
-	// var err error
-
-	// for i, contractAbi := range contractAbis {
-	// 	decodedData, err = token.ParseCallData(data, contractAbi)
-	// 	if err == nil {
-	// 		fmt.Printf("· %s: %s \n", contractNames[i], decodedData.Signature)
-	// 		break
-	// 	}
-	// }
-
-	// for _, input := range decodedData.Inputs {
-	// 	fmt.Printf("· %s[%s]: %s \n", input.SolType.Name, input.SolType.Type, input.Value)
-	// }
 }
 
 func getTransactionTypeString(txType uint8) string {
