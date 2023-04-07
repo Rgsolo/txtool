@@ -1,82 +1,53 @@
 package token
 
 import (
-	"bytes"
-	_ "embed"
 	"fmt"
+	"log"
+	"strings"
+	"sync"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 
-//go:embed erc20.abi.json
-var erc20Abi []byte
+const ERC20ABI = `[{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"}]`
 
-//go:embed erc721.abi.json
-var erc721Abi []byte
+const ERC721ABI = `[{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"_tokenId","type":"uint256"}],"name":"ownerOf","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_tokenId","type":"uint256"}],"name":"transferFrom","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_tokenId","type":"uint256"}],"name":"safeTransferFrom","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_tokenId","type":"uint256"}],"name":"safeTransferFrom","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}]`
 
-//go:embed erc1155.abi.json
-var erc1155Abi []byte
-
-type DecodedCallData struct {
-	Signature string
-	Name      string
-	Inputs    []DecodedArgument
-}
-
-type DecodedArgument struct {
-	SolType abi.Argument
-	Value   interface{}
-}
+const ERC1155ABI = `[{"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_id","type":"uint256"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"_owners","type":"address[]"},{"name":"_ids","type":"uint256[]"}],"name":"balanceOfBatch","outputs":[{"name":"","type":"uint256[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_id","type":"uint256"},{"name":"_value","type":"uint256"},{"name":"_data","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_ids","type":"uint256[]"},{"name":"_values","type":"uint256[]"},{"name":"_data","type":"bytes"}],"name":"safeBatchTransferFrom","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}]`
 
 var (
-	Erc20   = initABI(erc20Abi)
-	Erc721  = initABI(erc721Abi)
-	Erc1155 = initABI(erc1155Abi)
+	parsedABIs   []*abi.ABI
+	loadABIsOnce sync.Once
 )
 
-func initABI(bytesJSON []byte) *abi.ABI {
-	json, err := abi.JSON(bytes.NewReader(bytesJSON))
-	if err != nil {
-		panic(err)
+func loadABIs() {
+	contractABIs := []string{ERC20ABI, ERC721ABI, ERC1155ABI}
+
+	for _, contractABI := range contractABIs {
+		parsedABI, err := abi.JSON(strings.NewReader(contractABI))
+		if err != nil {
+			log.Fatalf("error parsing ABI: %v", err)
+		}
+		parsedABIs = append(parsedABIs, &parsedABI)
 	}
-	return &json
 }
 
-func ParseCallData(input []byte, abiSpec *abi.ABI) (*DecodedCallData, error) {
-	if err := validateCallData(input); err != nil {
-		return nil, err
-	}
-	argumentsData := input[4:]
+func ParseTransactionData(txData []byte) (contractType string, methodSig string, parsedArgs []interface{}, error error) {
+	contractTypes := []string{"ERC20", "ERC721", "ERC1155"}
 
-	method, err := abiSpec.MethodById(input)
-	if err != nil {
-		return nil, err
-	}
-	values, err := method.Inputs.UnpackValues(argumentsData)
-	if err != nil {
-		return nil, fmt.Errorf("signature %q matches, but arguments mismatch: %v", method.String(), err)
+	// 使用sync.Once确保loadABIs只执行一次
+	loadABIsOnce.Do(loadABIs)
+
+	for i, parsedABI := range parsedABIs {
+		method, err := parsedABI.MethodById(txData)
+		if err == nil {
+			parsedArgs, err := method.Inputs.Unpack(txData[4:])
+			if err != nil {
+				return "", "", nil, fmt.Errorf("error unpacking arguments: %v", err)
+			}
+			return contractTypes[i], method.Sig, parsedArgs, nil
+		}
 	}
 
-	return createDecodedCallData(method, values), nil
-}
-
-func validateCallData(input []byte) error {
-	if len(input) < 4 {
-		return fmt.Errorf("invalid call data, incomplete method signature (%d bytes < 4)", len(input))
-	}
-	argumentsData := input[4:]
-	if len(argumentsData)%32 != 0 {
-		return fmt.Errorf("invalid call data; length should be a multiple of 32 bytes (was %d)", len(argumentsData))
-	}
-	return nil
-}
-
-func createDecodedCallData(method *abi.Method, values []interface{}) *DecodedCallData {
-	decoded := DecodedCallData{Signature: method.Sig, Name: method.RawName}
-	for i := 0; i < len(method.Inputs); i++ {
-		decoded.Inputs = append(decoded.Inputs, DecodedArgument{
-			SolType: method.Inputs[i],
-			Value:   values[i],
-		})
-	}
-	return &decoded
+	return "", "", nil, fmt.Errorf("unable to parse transaction data")
 }

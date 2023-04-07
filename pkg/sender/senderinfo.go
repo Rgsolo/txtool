@@ -3,14 +3,14 @@ package sender
 import (
 	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum/accounts/abi"
+	"log"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/rgsolo/txtool/pkg/token"
 	"github.com/shopspring/decimal"
-	"log"
-	"math/big"
 )
 
 type Sender struct {
@@ -86,9 +86,9 @@ func printTransactionInfo(tx *types.Transaction, from common.Address, nextNonce 
 	fmt.Printf("· balance : %s\n", decimal.NewFromBigInt(balance, -18))
 
 	if nextNonce > tx.Nonce() {
-		fmt.Printf("\n⚠️ nonce %d is already used ", tx.Nonce())
+		fmt.Printf("\n⚠️  nonce %d is already used ", tx.Nonce())
 	} else {
-		fmt.Printf("\n✔️ nonce is available")
+		fmt.Printf("\n✔️  nonce is available")
 		checkNonceAndBalance(tx, fee, balance)
 	}
 }
@@ -108,41 +108,45 @@ func calculateTotalCost(tx *types.Transaction) *big.Int {
 }
 
 func checkNonceAndBalance(tx *types.Transaction, fee *big.Int, balance *big.Int) {
-
 	totalCost := new(big.Int).Add(fee, tx.Value())
 
 	if balance.Cmp(totalCost) < 0 {
-		fmt.Println("\n⚠️balance is not enough")
+		fmt.Println("\n⚠️ balance is not enough")
 	} else {
-		fmt.Println("\n✔️balance is enough~")
+		fmt.Println("\n✔️ balance is enough~")
 	}
 }
 
 func printContractInfo(data []byte) {
-	fmt.Println("📥 input data")
+	fmt.Println("\n📥 input data")
 
-	contractAbis := []*abi.ABI{token.Erc20, token.Erc721, token.Erc1155}
-	contractNames := []string{"erc20", "erc721", "erc1155"}
-
-	var decodedData *token.DecodedCallData
-	var err error
-
-	for i, contractAbi := range contractAbis {
-		decodedData, err = token.ParseCallData(data, contractAbi)
-		if err == nil {
-			fmt.Printf("· %s: %s \n", contractNames[i], decodedData.Signature)
-			break
-		}
-	}
-
+	contractType, methodSig, args, err := token.ParseTransactionData(data)
 	if err != nil {
 		fmt.Println("\n🙁not supported contract")
 		return
 	}
 
-	for _, input := range decodedData.Inputs {
-		fmt.Printf("· %s[%s]: %s \n", input.SolType.Name, input.SolType.Type, input.Value)
-	}
+	fmt.Println("· contractType: ", contractType)
+	fmt.Println("· methodSig: ", methodSig)
+	fmt.Println("· args: ", args)
+
+	// contractAbis := []*abi.ABI{token.Erc20, token.Erc721, token.Erc1155}
+	// contractNames := []string{"erc20", "erc721", "erc1155"}
+
+	// var decodedData *token.DecodedCallData
+	// var err error
+
+	// for i, contractAbi := range contractAbis {
+	// 	decodedData, err = token.ParseCallData(data, contractAbi)
+	// 	if err == nil {
+	// 		fmt.Printf("· %s: %s \n", contractNames[i], decodedData.Signature)
+	// 		break
+	// 	}
+	// }
+
+	// for _, input := range decodedData.Inputs {
+	// 	fmt.Printf("· %s[%s]: %s \n", input.SolType.Name, input.SolType.Type, input.Value)
+	// }
 }
 
 func getTransactionTypeString(txType uint8) string {
