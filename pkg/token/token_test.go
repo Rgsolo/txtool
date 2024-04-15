@@ -1,47 +1,15 @@
 package token
 
 import (
-	"bytes"
+	"database/sql"
 	"fmt"
-	"log"
-	"net"
-	"net/rpc"
-	"testing"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
+	_ "github.com/go-sql-driver/mysql"
+	"log"
+	"net/rpc"
+	"strings"
+	"testing"
 )
-
-func TestToken(t *testing.T) {
-	d := common.Hex2Bytes("f242432a0000000000000000000000001ce1a3f7ed42c4d688822e800cae1b5620fe117700000000000000000000000010be62d6cf64c21a0d03fa340533ce8d800bab9f0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000000")
-	callData, err := ParseCallData(d, Erc1155)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	fmt.Println(callData.Signature)
-	for _, input := range callData.Inputs {
-		fmt.Println(input.Value)
-	}
-}
-
-func TestAbi(t *testing.T) {
-	fmt.Println()
-
-	json, err := abi.JSON(bytes.NewBuffer(erc20Abi))
-	if err != nil {
-		return
-	}
-	fmt.Println(json.Events["Transfer"].ID.String())
-
-	fmt.Println(json.Methods["transferTokenOwnership"].Sig)
-	fmt.Println(json.Methods["transferTokenOwnership"].Name)
-	fmt.Println(json.Methods["transferTokenOwnership"].RawName)
-	fmt.Println(json.Methods["transferTokenOwnership"].)
-
-	fmt.Println(Erc721.Events["Transfer"].ID.String())
-}
 
 func TestName(t *testing.T) {
 	client, err := rpc.Dial("tcp", "10.95.2.48:8001")
@@ -59,15 +27,43 @@ func TestName(t *testing.T) {
 }
 
 func Test1(t *testing.T) {
-	_, err := net.Dial("tcp", "10.95.2.48:8001")
+	contractABI := "{\n  \"type\":\"event\",\n  \"name\":\"Transacted\",\n  \"inputs\":[\n    {\"type\":\"address\",\"name\":\"msgSender\",\"internalType\":\"address\",\"indexed\":false},\n    {\"type\":\"address\",\"name\":\"otherSigner\",\"internalType\":\"address\",\"indexed\":false},\n    {\"type\":\"bytes32\",\"name\":\"operation\",\"internalType\":\"bytes32\",\"indexed\":false},\n    {\"type\":\"address\",\"name\":\"toAddress\",\"internalType\":\"address\",\"indexed\":false},\n    {\"type\":\"uint256\",\"name\":\"value\",\"internalType\":\"uint256\",\"indexed\":false},\n    {\"type\":\"bytes\",\"name\":\"data\",\"internalType\":\"bytes\",\"indexed\":false}\n  ],\n  \"anonymous\":false \n}"
+	json, err := abi.JSON(strings.NewReader(contractABI))
 	if err != nil {
-		log.Fatal("dialing:", err)
+		t.Fatal()
 	}
-	//var reply string
-	//err = conn.Write("chain.getChainInfo", nil, &reply)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
 
-	//fmt.Println(reply)
+}
+
+func Test12(t *testing.T) {
+	//打开数据库连接
+	db, err := sql.Open("mysql", "bm-noah-test:321e*|Jn3f759GMZ@tcp(10.95.201.24:3306)/blockchains_exchange")
+	if err != nil {
+		panic(err.Error())
+	}
+	defer db.Close()
+
+	// 测试连接是否正常
+	err = db.Ping()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	// 执行 SQL 命令
+	rows, err := db.Query("SELECT txid FROM headlog_tx_arbitrum WHERE id > ?", 0)
+	if err != nil {
+		panic(err.Error())
+	}
+	defer rows.Close()
+	// 处理查询结果
+	for rows.Next() {
+		var txid string
+		err = rows.Scan(&txid)
+		if err != nil {
+			panic(err.Error())
+		}
+		fmt.Printf("txid: %s\n", txid)
+	}
+
+	fmt.Println("Connected to MySQL database!")
 }

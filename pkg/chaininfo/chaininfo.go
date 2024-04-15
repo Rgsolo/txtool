@@ -66,6 +66,11 @@ func fetchChainsData() ([]Chain, error) {
 }
 
 func GetChainInfo(chainID int64) (*Chain, error) {
+	chain := GetDefaultChainsData(chainID)
+	if chain != nil {
+		return chain, nil
+	}
+
 	chains, err := fetchChainsData()
 	if err != nil {
 		return nil, fmt.Errorf("无法获取 JSON 数据：%v", err)

@@ -31,7 +31,7 @@ func (s *Sender) GetSenderInfo(tx *types.Transaction) error {
 		return err
 	}
 
-	nextNonce, err := s.client.PendingNonceAt(context.Background(), from)
+	nextNonce, err := s.client.NonceAt(context.Background(), from, nil)
 	if err != nil {
 		return fmt.Errorf("failed to get next nonce for sender: %w", err)
 	}
