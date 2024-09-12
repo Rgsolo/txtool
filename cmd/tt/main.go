@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -8,13 +9,26 @@ import (
 	"github.com/rgsolo/txtool/pkg/sender"
 	"github.com/tidwall/pretty"
 	"os"
+	"strings"
 )
 
 func main() {
 	args := os.Args[1:]
 
 	if len(args) < 1 {
-		fmt.Println("Usage: tt <signed_tx> | tt send <signed_tx>")
+		fmt.Println("Usage: tt <signed_tx> | tt send <signed_tx> | tt <chain_name>")
+		return
+	}
+
+	if len(args) == 1 && !strings.HasPrefix(args[0], "0x") {
+		// 处理链名称输入情况
+		chainName := args[0]
+		chain, err := chaininfo.GetChainInfoByName(chainName)
+		if err != nil {
+			fmt.Printf("Error getting chain info for '%s': %v\n", chainName, err)
+			return
+		}
+		printChain(chain)
 		return
 	}
 
@@ -28,7 +42,7 @@ func main() {
 
 	printTransactionJson(transaction)
 
-	chainInfo, err := chaininfo.GetChainInfo(transaction.ChainId().Int64())
+	chainInfo, err := chaininfo.GetChainInfo(int(transaction.ChainId().Int64()))
 	if err != nil {
 		fmt.Println("Error getting chain info:", err)
 		return
@@ -36,7 +50,7 @@ func main() {
 
 	printChainInfo(chainInfo)
 
-	newSender := sender.NewSender(chainInfo.RpcURL[0])
+	newSender := sender.NewSender(chainInfo.RPC[0])
 
 	err = newSender.GetSenderInfo(transaction)
 	if err != nil {
@@ -86,9 +100,21 @@ func printTransactionJson(transaction *types.Transaction) {
 	fmt.Println(string(coloredJson))
 }
 
-func printChainInfo(chain *chaininfo.Chain) {
+func printChainInfo(chain *chaininfo.ChainInfo) {
 	fmt.Println("\n🔗 chain information")
 	fmt.Println("· chain name: ", chain.Name)
 	fmt.Println("· chain ID: ", chain.ChainID)
-	fmt.Println("· chain url: ", chain.RpcURL[0])
+	fmt.Println("· chain url: ", chain.RPC[0])
+}
+
+func printChain(chain *chaininfo.ChainInfo) {
+	// 将链的信息格式化为漂亮的 JSON
+	prettyJSON, err := json.MarshalIndent(chain, "", "  ")
+	if err != nil {
+		fmt.Printf("Failed to generate pretty JSON: %v\n", err)
+		return
+	}
+
+	// 输出格式化的 JSON
+	fmt.Println(string(prettyJSON))
 }
