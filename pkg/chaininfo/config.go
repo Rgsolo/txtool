@@ -9,6 +9,7 @@ var CMap = map[int]*ChainInfo{
 	//42161:      {Name: "Arbitrum", ChainID: 42161, RPC: []string{"https://rpc.ankr.com/arbitrum"}},
 	//43114:      {Name: "Avalanche", ChainID: 43114, RPC: []string{"https://rpc.ankr.com/avalanche"}},
 	//10:         {Name: "Optimism", ChainID: 10, RPC: []string{"https://rpc.ankr.com/optimism"}},
+	323:        {Name: "MCOIN", ChainID: 323, RPC: []string{"https://rpc1.m20chain.com"}},
 	250:        {Name: "Fantom", ChainID: 250, RPC: []string{"https://rpc.ankr.com/fantom"}},
 	42220:      {Name: "Celo", ChainID: 42220, RPC: []string{"https://rpc.ankr.com/celo"}},
 	1284:       {Name: "Moonbeam", ChainID: 1284, RPC: []string{"https://rpc.ankr.com/moonbeam"}},
