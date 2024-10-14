@@ -48,12 +48,6 @@ type Explorer struct {
 	Standard string `json:"standard"`
 }
 
-//type Chain struct {
-//	Name    string   `json:"name"`
-//	ChainID int64    `json:"chainId"`
-//	RpcURL  []string `json:"rpc"`
-//}
-
 func (c *ChainInfo) checkRpcURL(url string) (bool, error) {
 	reqBody := []byte(`{"jsonrpc": "2.0", "method": "eth_blockNumber", "params": [], "id": 1}`)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(reqBody))
