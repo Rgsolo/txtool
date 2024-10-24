@@ -3,12 +3,12 @@ package chaininfo
 import "strings"
 
 var CMap = map[int]*ChainInfo{
-	//1:          {Name: "ETH", ChainID: 1, RPC: []string{"https://rpc.ankr.com/eth"}},
-	//56:         {Name: "BSC", ChainID: 56, RPC: []string{"https://rpc.ankr.com/bsc"}},
-	//137:        {Name: "POLYGON", ChainID: 137, RPC: []string{"https://rpc.ankr.com/polygon"}},
-	//42161:      {Name: "Arbitrum", ChainID: 42161, RPC: []string{"https://rpc.ankr.com/arbitrum"}},
-	//43114:      {Name: "Avalanche", ChainID: 43114, RPC: []string{"https://rpc.ankr.com/avalanche"}},
-	//10:         {Name: "Optimism", ChainID: 10, RPC: []string{"https://rpc.ankr.com/optimism"}},
+	1:          {Name: "ETH", ChainID: 1, RPC: []string{"https://rpc.ankr.com/eth"}},
+	56:         {Name: "BSC", ChainID: 56, RPC: []string{"https://rpc.ankr.com/bsc"}},
+	137:        {Name: "POLYGON", ChainID: 137, RPC: []string{"https://rpc.ankr.com/polygon"}},
+	42161:      {Name: "Arbitrum", ChainID: 42161, RPC: []string{"https://rpc.ankr.com/arbitrum"}},
+	43114:      {Name: "Avalanche", ChainID: 43114, RPC: []string{"https://rpc.ankr.com/avalanche"}},
+	10:         {Name: "Optimism", ChainID: 10, RPC: []string{"https://rpc.ankr.com/optimism"}},
 	50:         {Name: "XDC", ChainID: 50, RPC: []string{"https://rpc.xdcrpc.com"}},
 	323:        {Name: "MCOIN", ChainID: 323, RPC: []string{"https://rpc1.m20chain.com"}},
 	250:        {Name: "Fantom", ChainID: 250, RPC: []string{"https://rpc.ankr.com/fantom"}},
@@ -22,6 +22,7 @@ var CMap = map[int]*ChainInfo{
 	256256:     {Name: "CMP", ChainID: 256256, RPC: []string{"https://mainnet.block.caduceus.foundation"}},
 	1131:       {Name: "OZONE", ChainID: 1131, RPC: []string{"https://chain.ozonescan.com/"}},
 	21:         {Name: "CTXC", ChainID: 21, RPC: []string{"http://10.95.6.218:8545"}},
+	204:        {Name: "opBNB", ChainID: 204, RPC: []string{"https://opbnb-rpc.publicnode.com"}},
 }
 
 func GetDefaultChainsData(chainID int) *ChainInfo {
